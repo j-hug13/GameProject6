@@ -7,13 +7,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static GameProject6.RubiksCube;
+using static GameProject6.RubiksCube3x3;
 using static System.TimeZoneInfo;
 
 namespace GameProject6
 {
     public class MenuScreen
     {
+        private enum TransitionTarget
+        {
+            None,
+            Start,
+            Leaderboards,
+        }
+
+        private MainController game;
+
         private MouseState currentMouse;
         private MouseState previousMouse;
 
@@ -27,8 +36,13 @@ namespace GameProject6
         private Rectangle leaderboardsButtonBounds;
         private Rectangle settingsButtonBounds;
 
+        private Rectangle twoByTwoButtonBounds;
+        private Rectangle threeByThreeButtonBounds;
+
+        private bool onSelectScreen = false;
+
         // === Fields For Start Transition === //
-        private bool isTransitioning = false;
+        private TransitionTarget transitionTarget = TransitionTarget.None;
         private float transitionTimer = 0f;
         private const float MaxTime = 1.5f;
         private OrbitCamera camera;
@@ -40,6 +54,7 @@ namespace GameProject6
 
         public void LoadContent(ContentManager content, MainController game)
         {
+            this.game = game;
             spriteFont = content.Load<SpriteFont>("bangers");
 
             backgroundTexture = content.Load<Texture2D>("MenuScreen/menuScreen");
@@ -52,7 +67,12 @@ namespace GameProject6
             startButtonBounds = new Rectangle(565, 175, (int)startSize.X, (int)startSize.Y);
             leaderboardsButtonBounds = new Rectangle(505, 250, (int)leaderboardsSize.X, (int)leaderboardsSize.Y);
             settingsButtonBounds = new Rectangle(450, 325, (int)settingsSize.X, (int)settingsSize.Y);
-            quitButtonBounds = new Rectangle(775, 325, (int)quitSize.X, (int)quitSize.Y);
+            quitButtonBounds = new Rectangle(770, 325, (int)quitSize.X, (int)quitSize.Y);
+
+            Vector2 twoByTwoSize = spriteFont.MeasureString("2 x 2");
+            Vector2 threeByThreeSize = spriteFont.MeasureString("3 x 3");
+            twoByTwoButtonBounds = new Rectangle(465, 190, (int)twoByTwoSize.X, (int)twoByTwoSize.Y);
+            threeByThreeButtonBounds = new Rectangle(745, 190, (int)threeByThreeSize.X, (int)threeByThreeSize.Y);
 
             camera = new OrbitCamera(game.GraphicsDevice, 10f);
 
@@ -68,7 +88,7 @@ namespace GameProject6
             previousMouse = currentMouse;
             currentMouse = Mouse.GetState();
 
-            if (isTransitioning == true)
+            if (transitionTarget != TransitionTarget.None)
             {
                 transitionTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
                 float progress = MathHelper.Clamp(transitionTimer / MaxTime, 0f, 1f);
@@ -81,38 +101,78 @@ namespace GameProject6
 
                 if (transitionTimer >= MaxTime)
                 {
-                    isTransitioning = false;
-                    return GameState.Playing;
+                    if (transitionTarget == TransitionTarget.Start)
+                    {
+                        transitionTarget = TransitionTarget.None;
+                        onSelectScreen = false;
+                        return GameState.Playing;
+                    }
+                    else if (transitionTarget == TransitionTarget.Leaderboards)
+                    {
+                        transitionTarget = TransitionTarget.None;
+                        return GameState.Leaderboards;
+                    }
+                    else
+                    {
+                        transitionTarget = TransitionTarget.None;
+                    }
                 }
-
                 return null;
             }
 
-            if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
+            if (onSelectScreen == false)
             {
-                if (quitButtonBounds.Contains(currentMouse.Position))
+                if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
                 {
-                    return GameState.Quit;
-                }
+                    if (quitButtonBounds.Contains(currentMouse.Position))
+                    {
+                        return GameState.Quit;
+                    }
 
-                if (startButtonBounds.Contains(currentMouse.Position))
+                    if (startButtonBounds.Contains(currentMouse.Position))
+                    {
+                        onSelectScreen = true;
+                    }
+
+                    if (leaderboardsButtonBounds.Contains(currentMouse.Position))
+                    {
+                        transitionTarget = TransitionTarget.Leaderboards;
+                        transitionTimer = 0f;
+                        initialCameraPosition = camera.Position;
+                        initialCameraTarget = camera.Target;
+                        return null;
+                    }
+
+                    if (settingsButtonBounds.Contains(currentMouse.Position))
+                    {
+                        return GameState.Settings;
+                    }
+                }
+            }
+            else
+            {
+                if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
                 {
-                    isTransitioning = true;
-                    transitionTimer = 0f;
-                    initialCameraPosition = camera.Position;
-                    initialCameraTarget = camera.Target;
-                    return null;
+                    if (threeByThreeButtonBounds.Contains(currentMouse.Position))
+                    {
+                        transitionTarget = TransitionTarget.Start;
+                        transitionTimer = 0f;
+                        initialCameraPosition = camera.Position;
+                        initialCameraTarget = camera.Target;
+                        return null;
+                    }
                 }
             }
 
             return null;
         }
+
         public void Draw(GameTime gameTime, SpriteBatch spriteBatch, GraphicsDevice graphics)
         {
             graphics.Clear(Color.White);
 
             float zoomScale = 1f;
-            if (isTransitioning == true)
+            if (transitionTarget != TransitionTarget.None)
             {
                 float progress = MathHelper.Clamp(transitionTimer / MaxTime, 0f, 1f);
                 zoomScale = MathHelper.SmoothStep(1f, 2.5f, progress);
@@ -133,56 +193,87 @@ namespace GameProject6
             );
 
             spriteBatch.Draw(backgroundTexture, graphics.Viewport.Bounds, Color.White);
-            spriteBatch.Draw(menuButton, new Vector2(500, 185), Color.White);
-            spriteBatch.Draw(menuButton, new Vector2(440, 260), Color.White);
-            spriteBatch.Draw(menuButton, new Vector2(385, 335), Color.White);
-            spriteBatch.Draw(menuButton, new Vector2(710, 335), Color.White);
 
-            Color startButtonColor;
-            if (startButtonBounds.Contains(currentMouse.Position) == true)
+            if (onSelectScreen == false)
             {
-                startButtonColor = Color.Gold;
+                spriteBatch.Draw(menuButton, new Vector2(500, 185), Color.White);
+                spriteBatch.Draw(menuButton, new Vector2(440, 260), Color.White);
+                spriteBatch.Draw(menuButton, new Vector2(385, 335), Color.White);
+                spriteBatch.Draw(menuButton, new Vector2(705, 335), Color.White);
+
+                Color startButtonColor;
+                if (startButtonBounds.Contains(currentMouse.Position) == true && transitionTarget == TransitionTarget.None)
+                {
+                    startButtonColor = Color.Gold;
+                }
+                else
+                {
+                    startButtonColor = Color.LightGreen;
+                }
+                spriteBatch.DrawString(spriteFont, "Start", new Vector2(565, 175), startButtonColor);
+
+                Color leaderboardsButtonColor;
+                if (leaderboardsButtonBounds.Contains(currentMouse.Position) == true && transitionTarget == TransitionTarget.None)
+                {
+                    leaderboardsButtonColor = Color.Gold;
+                }
+                else
+                {
+                    leaderboardsButtonColor = Color.LightGreen;
+                }
+                spriteBatch.DrawString(spriteFont, "Leaderboards", new Vector2(505, 250), leaderboardsButtonColor);
+
+                Color settingsButtonColor;
+                if (settingsButtonBounds.Contains(currentMouse.Position) == true && transitionTarget == TransitionTarget.None)
+                {
+                    settingsButtonColor = Color.Gold;
+                }
+                else
+                {
+                    settingsButtonColor = Color.LightGreen;
+                }
+                spriteBatch.DrawString(spriteFont, "Settings", new Vector2(450, 325), settingsButtonColor);
+
+                Color quitButtonColor;
+                if (quitButtonBounds.Contains(currentMouse.Position) == true && transitionTarget == TransitionTarget.None)
+                {
+                    quitButtonColor = Color.Gold;
+                }
+                else
+                {
+                    quitButtonColor = Color.LightGreen;
+                }
+                spriteBatch.DrawString(spriteFont, "Quit", new Vector2(770, 325), quitButtonColor);
             }
             else
             {
-                startButtonColor = Color.LightGreen;
-            }
-            spriteBatch.DrawString(spriteFont, "Start", new Vector2(565, 175), startButtonColor);
+                spriteBatch.Draw(menuButton, new Vector2(400, 200), Color.White);
+                spriteBatch.Draw(menuButton, new Vector2(680, 200), Color.White);
 
-            Color leaderboardsButtonColor;
-            if (leaderboardsButtonBounds.Contains(currentMouse.Position) == true)
-            {
-                leaderboardsButtonColor = Color.Gold;
-            }
-            else
-            {
-                leaderboardsButtonColor = Color.LightGreen;
-            }
-            spriteBatch.DrawString(spriteFont, "Leaderboards", new Vector2(505, 250), leaderboardsButtonColor);
+                Color twoByTwoButtonColor;
+                if (twoByTwoButtonBounds.Contains(currentMouse.Position) == true && transitionTarget == TransitionTarget.None)
+                {
+                    twoByTwoButtonColor = Color.Gold;
+                }
+                else
+                {
+                    twoByTwoButtonColor = Color.LightGreen;
+                }
+                spriteBatch.DrawString(spriteFont, "2 x 2", new Vector2(465, 190), twoByTwoButtonColor);
 
-            Color settingsButtonColor;
-            if (settingsButtonBounds.Contains(currentMouse.Position) == true)
-            {
-                settingsButtonColor = Color.Gold;
+                Color threeByThreeButtonColor;
+                if (threeByThreeButtonBounds.Contains(currentMouse.Position) == true && transitionTarget == TransitionTarget.None)
+                {
+                    threeByThreeButtonColor = Color.Gold;
+                }
+                else
+                {
+                    threeByThreeButtonColor = Color.LightGreen;
+                }
+                spriteBatch.DrawString(spriteFont, "3 x 3", new Vector2(745, 190), threeByThreeButtonColor);
             }
-            else
-            {
-                settingsButtonColor = Color.LightGreen;
-            }
-            spriteBatch.DrawString(spriteFont, "Settings", new Vector2(450, 325), settingsButtonColor);
 
-            Color quitButtonColor;
-            if (quitButtonBounds.Contains(currentMouse.Position) == true)
-            {
-                quitButtonColor = Color.Gold;
-            }
-            else
-            {
-                quitButtonColor = Color.LightGreen;
-            }
-            spriteBatch.DrawString(spriteFont, "Quit", new Vector2(775, 325), quitButtonColor);
-
-            spriteBatch.End();
+                spriteBatch.End();
         }
     }
 }

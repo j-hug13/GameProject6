@@ -14,7 +14,7 @@ namespace GameProject6
         public Point3(int x, int y, int z) { X = x; Y = y; Z = z; }
     }
 
-    public class RubiksCube
+    public class RubiksCube3x3
     {
         // === Fields and stuff for Building Cube === //
         public BasicEffect Effect => effect;
@@ -55,7 +55,7 @@ namespace GameProject6
 
         // === Fields for Layer Selection === //
         public bool IsLayerSelected { get; set; } = false;
-        public RubiksCube.CubeAxis SelectedAxis { get; private set; }
+        public CubeAxis SelectedAxis { get; private set; }
         public int SelectedLayer { get; private set; }
         public struct HitInfo
         {
@@ -76,13 +76,13 @@ namespace GameProject6
 
         private readonly Queue<CubeMove> scrambleQueue = new Queue<CubeMove>();
         private readonly Random r = new Random();
-        private const int ScrambleMoves = 40;
+        private const int ScrambleMoves = 1;
         private CubeAxis lastAxis = CubeAxis.None;
         private int lastLayer;
         private const float ScrambleSpeed = MathHelper.Pi * 10.0f;
         // =================================== //
 
-        public RubiksCube(GraphicsDevice graphicsDevice)
+        public RubiksCube3x3(GraphicsDevice graphicsDevice)
         {
             this.graphicsDevice = graphicsDevice;
             effect = new BasicEffect(graphicsDevice)

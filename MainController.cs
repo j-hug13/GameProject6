@@ -10,8 +10,8 @@ namespace GameProject6
     {
         Menu,
         Playing,
-        //Leaderboards,
-        //Settings,
+        Leaderboards,
+        Settings,
         Quit
     }
 
@@ -32,6 +32,8 @@ namespace GameProject6
 
         private MenuScreen menuScreen;
         private GameScene gameScene;
+        private LeaderboardScreen leaderboardScreen;
+        private SettingsScreen settingsScreen;
 
         public static int ScreenWidth = 1280;
         public static int ScreenHeight = 720;
@@ -50,6 +52,7 @@ namespace GameProject6
             graphics.PreferredBackBufferWidth = ScreenWidth;
             graphics.PreferredBackBufferHeight = ScreenHeight;
             graphics.ApplyChanges();
+            graphics.ApplyChanges();
 
             base.Initialize();
         }
@@ -60,6 +63,12 @@ namespace GameProject6
 
             menuScreen = new MenuScreen();
             menuScreen.LoadContent(Content, this);
+
+            leaderboardScreen = new LeaderboardScreen();
+            leaderboardScreen.LoadContent(Content, this, GraphicsDevice);
+
+            settingsScreen = new SettingsScreen();
+            settingsScreen.LoadContent(Content, this, GraphicsDevice);
         }
 
         protected override void Update(GameTime gameTime)
@@ -91,6 +100,22 @@ namespace GameProject6
                     }
                     break;
 
+                case GameState.Leaderboards:
+                    state = leaderboardScreen.Update(gameTime);
+                    if (state != null)
+                    {
+                        currentState = state.Value;
+                    }
+                    break;
+
+                case GameState.Settings:
+                    state = settingsScreen.Update(gameTime, graphics);
+                    if (state != null)
+                    {
+                        currentState = state.Value;
+                    }
+                    break;
+
                 case GameState.Quit:
                     Exit();
                     break;
@@ -115,6 +140,14 @@ namespace GameProject6
                         gameScene.Draw(gameTime, GraphicsDevice);
                     }
                     break;
+
+                case GameState.Leaderboards:
+                    leaderboardScreen.Draw(gameTime, spriteBatch, GraphicsDevice);
+                    break;
+
+                case GameState.Settings:
+                    settingsScreen.Draw(gameTime, spriteBatch, GraphicsDevice);
+                    break;
             }
 
             base.Draw(gameTime);
@@ -127,6 +160,24 @@ namespace GameProject6
                 Leaderboards[type] = new Leaderboard(type);
             }
             return Leaderboards[type];
+        }
+
+        public void SetFullscreen(bool fullscreen)
+        {
+            graphics.IsFullScreen = fullscreen;
+
+            if (fullscreen)
+            {
+                graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+                graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+            }
+            else
+            {
+                graphics.PreferredBackBufferWidth = 1280;
+                graphics.PreferredBackBufferHeight = 720;
+            }
+
+            graphics.ApplyChanges();
         }
     }
 }

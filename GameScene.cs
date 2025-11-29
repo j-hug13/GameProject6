@@ -13,7 +13,7 @@ namespace GameProject6
         private MainController game;
         private GraphicsDevice controllerGraphics;
 
-        private RubiksCube rubiksCube;
+        private RubiksCube3x3 rubiksCube;
         private OrbitCamera camera;
         private KeyboardState currentKeyboard;
         private KeyboardState previousKeyboard;
@@ -70,7 +70,7 @@ namespace GameProject6
         {
             spriteFont = content.Load<SpriteFont>("bangers");
 
-            rubiksCube = new RubiksCube(controllerGraphics);
+            rubiksCube = new RubiksCube3x3(controllerGraphics);
             camera = new OrbitCamera(controllerGraphics, 10f);
 
             rubiksCube.Effect.View = camera.View;
@@ -151,7 +151,7 @@ namespace GameProject6
                     if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
                     {
                         Ray selection = CalculateRay(currentMouse.Position.ToVector2(), camera.View, camera.Projection);
-                        RubiksCube.HitInfo hit = rubiksCube.Intersect(selection);
+                        RubiksCube3x3.HitInfo hit = rubiksCube.Intersect(selection);
 
                         if (hit.Hit == true)
                         {
@@ -184,7 +184,7 @@ namespace GameProject6
 
                             rubiksCube.StartRotation(rubiksCube.SelectedAxis, rubiksCube.SelectedLayer, adjustedDirection);
 
-                            rubiksCube.rotationSpeed = RubiksCube.NormalRotationSpeed;
+                            rubiksCube.rotationSpeed = RubiksCube3x3.NormalRotationSpeed;
                         }
                     }
                 }
