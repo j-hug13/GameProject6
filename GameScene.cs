@@ -13,7 +13,7 @@ namespace GameProject6
         private MainController game;
         private GraphicsDevice controllerGraphics;
 
-        private RubiksCube3x3 rubiksCube;
+        private dynamic rubiksCube;
         private OrbitCamera camera;
         private KeyboardState currentKeyboard;
         private KeyboardState previousKeyboard;
@@ -43,6 +43,8 @@ namespace GameProject6
         private bool isSolved = false;
         private TimeSpan timeToSolve = TimeSpan.Zero;
 
+        public const float NormalRotationSpeed = MathHelper.Pi * 2.0f;
+
         private Ray CalculateRay(Vector2 mousePosition, Matrix view, Matrix projection)
         {
             Viewport viewport = controllerGraphics.Viewport;
@@ -70,7 +72,14 @@ namespace GameProject6
         {
             spriteFont = content.Load<SpriteFont>("bangers");
 
-            rubiksCube = new RubiksCube3x3(controllerGraphics);
+            if (cubeType == CubeType.Cube2x2) 
+            {
+                rubiksCube = new RubiksCube2x2(controllerGraphics);
+            }
+            else
+            {
+                rubiksCube = new RubiksCube3x3(controllerGraphics);
+            }
             camera = new OrbitCamera(controllerGraphics, 10f);
 
             rubiksCube.Effect.View = camera.View;
@@ -151,7 +160,7 @@ namespace GameProject6
                     if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
                     {
                         Ray selection = CalculateRay(currentMouse.Position.ToVector2(), camera.View, camera.Projection);
-                        RubiksCube3x3.HitInfo hit = rubiksCube.Intersect(selection);
+                        var hit = rubiksCube.Intersect(selection);
 
                         if (hit.Hit == true)
                         {
@@ -184,7 +193,7 @@ namespace GameProject6
 
                             rubiksCube.StartRotation(rubiksCube.SelectedAxis, rubiksCube.SelectedLayer, adjustedDirection);
 
-                            rubiksCube.rotationSpeed = RubiksCube3x3.NormalRotationSpeed;
+                            rubiksCube.rotationSpeed = NormalRotationSpeed;
                         }
                     }
                 }

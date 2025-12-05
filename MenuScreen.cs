@@ -159,6 +159,17 @@ namespace GameProject6
                         transitionTimer = 0f;
                         initialCameraPosition = camera.Position;
                         initialCameraTarget = camera.Target;
+                        game.SelectedCube = CubeType.Cube3x3;
+                        return null;
+                    }
+
+                    if (twoByTwoButtonBounds.Contains(currentMouse.Position))
+                    {
+                        transitionTarget = TransitionTarget.Start;
+                        transitionTimer = 0f;
+                        initialCameraPosition = camera.Position;
+                        initialCameraTarget = camera.Target;
+                        game.SelectedCube = CubeType.Cube2x2;
                         return null;
                     }
                 }

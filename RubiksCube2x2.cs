@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace GameProject6
 {
@@ -14,9 +14,11 @@ namespace GameProject6
         public BasicEffect Effect => effect;
         public Matrix World { get; set; } = Matrix.Identity;
 
+        private const float CubeletSpacing = 0.51f;
+
         private GraphicsDevice graphicsDevice;
         private BasicEffect effect;
-        private Cubelet[,,] cubelets = new Cubelet[3, 3, 3];
+        private Cubelet[,,] cubelets = new Cubelet[2, 2, 2];
         private class Cubelet
         {
             public Point3 GridPos;
@@ -38,7 +40,6 @@ namespace GameProject6
         public enum CubeAxis { X, Y, Z, None }
         public bool IsRotating => isRotating;
         public float rotationSpeed = MathHelper.Pi * 2.0f;
-        public const float NormalRotationSpeed = MathHelper.Pi * 2.0f;
 
         private bool isRotating = false;
         private CubeAxis currentAxis;
@@ -91,11 +92,12 @@ namespace GameProject6
         #region Create The Cube
         private void BuildCube()
         {
-            for (int x = -1; x <= 1; x++)
+            int[] coords = { -1, 1 };
+            foreach (int x in coords)
             {
-                for (int y = -1; y <= 1; y++)
+                foreach (int y in coords)
                 {
-                    for (int z = -1; z <= 1; z++)
+                    foreach (int z in coords)
                     {
                         var colors = InitFaceColors(x, y, z);
                         Vector3[] initialNormals = new Vector3[]
@@ -109,7 +111,11 @@ namespace GameProject6
                         };
                         var verts = CreateRubiksCubelet(new Point3(x, y, z), 1f, colors, initialNormals);
 
-                        cubelets[x + 1, y + 1, z + 1] = new Cubelet
+                        int ix = (x == -1) ? 0 : 1;
+                        int iy = (y == -1) ? 0 : 1;
+                        int iz = (z == -1) ? 0 : 1;
+
+                        cubelets[ix, iy, iz] = new Cubelet
                         {
                             GridPos = new Point3(x, y, z),
                             FaceColors = colors,
@@ -117,7 +123,7 @@ namespace GameProject6
                             Buffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColor), verts.Length, BufferUsage.WriteOnly)
                         };
 
-                        cubelets[x + 1, y + 1, z + 1].Buffer.SetData(verts);
+                        cubelets[ix, iy, iz].Buffer.SetData(verts);
                     }
                 }
             }
@@ -333,11 +339,15 @@ namespace GameProject6
 
         private void RebuildCubeArray()
         {
-            var newCubelets = new Cubelet[3, 3, 3];
+            var newCubelets = new Cubelet[2, 2, 2];
             foreach (var c in cubelets)
             {
-                newCubelets[c.GridPos.X + 1, c.GridPos.Y + 1, c.GridPos.Z + 1] = c;
-            }
+                int x = (c.GridPos.X == -1) ? 0 : 1;
+                int y = (c.GridPos.Y == -1) ? 0 : 1;
+                int z = (c.GridPos.Z == -1) ? 0 : 1;
+
+                newCubelets[x, y, z] = c;
+            }      
             cubelets = newCubelets;
         }
 
@@ -358,7 +368,7 @@ namespace GameProject6
 
             foreach (var c in cubelets)
             {
-                Vector3 cubeletPos = new Vector3(c.GridPos.X, c.GridPos.Y, c.GridPos.Z);
+                Vector3 cubeletPos = new Vector3(c.GridPos.X, c.GridPos.Y, c.GridPos.Z) * CubeletSpacing;
 
                 Vector3 min = cubeletPos - new Vector3(size / 2f);
                 Vector3 max = cubeletPos + new Vector3(size / 2f);
@@ -520,7 +530,7 @@ namespace GameProject6
         {
             if (scrambleQueue.Count == 0)
             {
-                rotationSpeed = NormalRotationSpeed;
+                rotationSpeed = GameScene.NormalRotationSpeed;
                 return;
             }
 
@@ -549,15 +559,12 @@ namespace GameProject6
                 int normalIndex = faces[i, 1];
                 CubeAxis axis = (CubeAxis)faces[i, 2];
 
-                Point3 center = new Point3(axis == CubeAxis.X ? layerIndex : 0, axis == CubeAxis.Y ? layerIndex : 0, axis == CubeAxis.Z ? layerIndex : 0);
-                Cubelet centerCube = cubelets[center.X + 1, center.Y + 1, center.Z + 1];
-                Color targetColor = centerCube.FaceColors[normalIndex];
+                var faceCubelets = GetLayer(axis, layerIndex);
+                Color targetColor = faceCubelets[0].FaceColors[normalIndex];
 
-                List<Cubelet> cubeletsInLayer = GetLayer(axis, layerIndex);
-                foreach (Cubelet c in cubeletsInLayer)
+                foreach (var c in faceCubelets)
                 {
-                    Color currentColor = c.FaceColors[normalIndex];
-                    if (currentColor != targetColor)
+                    if (c.FaceColors[normalIndex] != targetColor)
                     {
                         return false;
                     }
@@ -594,7 +601,7 @@ namespace GameProject6
 
             foreach (var c in cubelets)
             {
-                Vector3 cubeletPos = new Vector3(c.GridPos.X, c.GridPos.Y, c.GridPos.Z);
+                Vector3 cubeletPos = new Vector3(c.GridPos.X, c.GridPos.Y, c.GridPos.Z) * CubeletSpacing;
                 Matrix cubeWorld = Matrix.CreateTranslation(cubeletPos);
 
                 if (isRotating == false && IsLayerSelected == true)
@@ -625,7 +632,7 @@ namespace GameProject6
                             CubeAxis.Y => new Vector3(0, currentLayer, 0),
                             CubeAxis.Z => new Vector3(0, 0, currentLayer),
                             _ => Vector3.Zero
-                        };
+                        } * CubeletSpacing;
 
                         Matrix selectedAxis = currentAxis switch
                         {

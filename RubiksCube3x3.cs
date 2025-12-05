@@ -44,7 +44,6 @@ namespace GameProject6
         public enum CubeAxis { X, Y, Z, None }
         public bool IsRotating => isRotating;
         public float rotationSpeed = MathHelper.Pi * 2.0f;
-        public const float NormalRotationSpeed = MathHelper.Pi * 2.0f;
 
         private bool isRotating = false;
         private CubeAxis currentAxis;
@@ -525,7 +524,7 @@ namespace GameProject6
         {
             if (scrambleQueue.Count == 0)
             {
-                rotationSpeed = NormalRotationSpeed;
+                rotationSpeed = GameScene.NormalRotationSpeed;
                 return;
             }
 

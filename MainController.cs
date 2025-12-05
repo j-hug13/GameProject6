@@ -38,6 +38,8 @@ namespace GameProject6
         public static int ScreenWidth = 1280;
         public static int ScreenHeight = 720;
 
+        public CubeType SelectedCube;
+
         public Dictionary<CubeType, Leaderboard> Leaderboards { get; private set; } = new Dictionary<CubeType, Leaderboard>();
 
         public MainController()
@@ -86,7 +88,7 @@ namespace GameProject6
                 case GameState.Playing:
                     if (gameScene == null)
                     {
-                        gameScene = new GameScene(this, spriteBatch, CubeType.Cube3x3);
+                        gameScene = new GameScene(this, spriteBatch, SelectedCube);
                         gameScene.LoadContent(Content);
                     }
                     state = gameScene.Update(gameTime);
