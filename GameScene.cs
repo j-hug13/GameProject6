@@ -12,6 +12,7 @@ namespace GameProject6
     {
         private MainController game;
         private GraphicsDevice controllerGraphics;
+        private SettingsScreen settings;
 
         private dynamic rubiksCube;
         private OrbitCamera camera;
@@ -43,7 +44,15 @@ namespace GameProject6
         private bool isSolved = false;
         private TimeSpan timeToSolve = TimeSpan.Zero;
 
-        public const float NormalRotationSpeed = MathHelper.Pi * 2.0f;
+        public float RotationSpeed = MathHelper.Pi * 2.0f;
+
+        private Point GetScaledMousePos()
+        {
+            Matrix inv = Matrix.Invert(game.UIScaleMatrix);
+            Vector2 v = Vector2.Transform(currentMouse.Position.ToVector2(), inv);
+            Point pos = new Point((int)v.X, (int)v.Y);
+            return pos;
+        }
 
         private Ray CalculateRay(Vector2 mousePosition, Matrix view, Matrix projection)
         {
@@ -59,11 +68,13 @@ namespace GameProject6
             return r;
         }
 
-        public GameScene(MainController g, SpriteBatch sb, CubeType type)
+        public GameScene(MainController g, SpriteBatch sb, CubeType type, SettingsScreen settingsScreen)
         {
             game = g;
             controllerGraphics = game.GraphicsDevice;
-            spriteBatch = sb;                     
+            spriteBatch = sb;
+
+            settings = settingsScreen;
 
             cubeType = type;
         }
@@ -72,20 +83,26 @@ namespace GameProject6
         {
             spriteFont = content.Load<SpriteFont>("bangers");
 
+            RotationSpeed = MathHelper.Pi * 2.5f;
+            if (settings.SelectedMoveSpeed == MoveSpeed.Fast) RotationSpeed = MathHelper.Pi * 5.0f;
+            else if (settings.SelectedMoveSpeed == MoveSpeed.VeryFast) RotationSpeed = MathHelper.Pi * 10.0f;
+            else if (settings.SelectedMoveSpeed == MoveSpeed.Slow) RotationSpeed = MathHelper.Pi * 1.5f;
+            else if (settings.SelectedMoveSpeed == MoveSpeed.VerySlow) RotationSpeed = MathHelper.Pi * 0.5f;
+
             if (cubeType == CubeType.Cube2x2) 
             {
-                rubiksCube = new RubiksCube2x2(controllerGraphics);
+                rubiksCube = new RubiksCube2x2(controllerGraphics, RotationSpeed);
             }
             else
             {
-                rubiksCube = new RubiksCube3x3(controllerGraphics);
+                rubiksCube = new RubiksCube3x3(controllerGraphics, RotationSpeed);
             }
             camera = new OrbitCamera(controllerGraphics, 10f);
 
             rubiksCube.Effect.View = camera.View;
             rubiksCube.Effect.Projection = camera.Projection;
 
-            pauseMenu = new PauseMenu(controllerGraphics, content);
+            pauseMenu = new PauseMenu(controllerGraphics, content, game);
             pauseButton = content.Load<Texture2D>("GameScene/pauseButton");
             pauseButtonBounds = new Rectangle(1185, 20, pauseButton.Width, pauseButton.Height);
 
@@ -105,7 +122,7 @@ namespace GameProject6
                 {
                     isPaused = !isPaused;
                 }
-                if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released && pauseButtonBounds.Contains(currentMouse.Position))
+                if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released && pauseButtonBounds.Contains(GetScaledMousePos()))
                 {
                     isPaused = !isPaused;
                 }
@@ -123,9 +140,9 @@ namespace GameProject6
 
             if (isPaused == true)
             {
-                if (pauseMenu.CheckQuitBounds(currentMouse, previousMouse) == true)
+                if (pauseMenu.CheckReturnBounds(currentMouse, previousMouse) == true)
                 {
-                    game.Exit();
+                    return GameState.Menu;
                 }
             }
             if (isSolved == true)
@@ -193,7 +210,7 @@ namespace GameProject6
 
                             rubiksCube.StartRotation(rubiksCube.SelectedAxis, rubiksCube.SelectedLayer, adjustedDirection);
 
-                            rubiksCube.rotationSpeed = NormalRotationSpeed;
+                            rubiksCube.rotationSpeed = RotationSpeed;
                         }
                     }
                 }
@@ -223,7 +240,7 @@ namespace GameProject6
 
             rubiksCube.Draw(rubiksCube.Effect, rubiksCube.World);
 
-            spriteBatch.Begin();
+            spriteBatch.Begin(transformMatrix: game.UIScaleMatrix);
 
             TimeSpan displayTime = solvingTime;
             if (isSolved == true)

@@ -35,6 +35,7 @@ namespace GameProject6
         private LeaderboardScreen leaderboardScreen;
         private SettingsScreen settingsScreen;
 
+        public Matrix UIScaleMatrix { get; private set; } = Matrix.Identity;
         public static int ScreenWidth = 1280;
         public static int ScreenHeight = 720;
 
@@ -51,10 +52,19 @@ namespace GameProject6
 
         protected override void Initialize()
         {
-            graphics.PreferredBackBufferWidth = ScreenWidth;
-            graphics.PreferredBackBufferHeight = ScreenHeight;
-            graphics.ApplyChanges();
-            graphics.ApplyChanges();
+            SettingsManager settings = SettingsManager.Load();
+            List<Point> resolutions = new List<Point>()
+            {
+                new Point(1280, 720),
+                new Point(1600, 900),
+                new Point(1920, 1080)
+            };
+            Point res = resolutions[settings.ResolutionIndex];
+
+            ScreenWidth = res.X;
+            ScreenHeight = res.Y;
+
+            SetScreenSize(settings.IsFullscreen);
 
             base.Initialize();
         }
@@ -88,7 +98,7 @@ namespace GameProject6
                 case GameState.Playing:
                     if (gameScene == null)
                     {
-                        gameScene = new GameScene(this, spriteBatch, SelectedCube);
+                        gameScene = new GameScene(this, spriteBatch, SelectedCube, settingsScreen);
                         gameScene.LoadContent(Content);
                     }
                     state = gameScene.Update(gameTime);
@@ -164,22 +174,38 @@ namespace GameProject6
             return Leaderboards[type];
         }
 
-        public void SetFullscreen(bool fullscreen)
+        public void SetScreenSize(bool fullscreen)
         {
-            graphics.IsFullScreen = fullscreen;
-
-            if (fullscreen)
+            if (fullscreen == true)
             {
-                graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
-                graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+                graphics.IsFullScreen = true;
+                var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
+                ScreenWidth = display.Width;
+                ScreenHeight = display.Height;
+
+                graphics.IsFullScreen = fullscreen;
+                graphics.PreferredBackBufferWidth = display.Width;
+                graphics.PreferredBackBufferHeight = display.Height;
             }
             else
             {
-                graphics.PreferredBackBufferWidth = 1280;
-                graphics.PreferredBackBufferHeight = 720;
+                graphics.IsFullScreen = false;
+                graphics.PreferredBackBufferWidth = ScreenWidth;
+                graphics.PreferredBackBufferHeight = ScreenHeight;
             }
 
             graphics.ApplyChanges();
+            UpdateScaleMatrix();
+        }
+
+        private void UpdateScaleMatrix()
+        {
+            float scaleX = (float)graphics.PreferredBackBufferWidth / 1280f;
+            float scaleY = (float)graphics.PreferredBackBufferHeight / 720f;
+
+            float scale = Math.Min(scaleX, scaleY);
+
+            UIScaleMatrix = Matrix.CreateScale(scale);
         }
     }
 }

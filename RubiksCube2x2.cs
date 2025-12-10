@@ -39,8 +39,9 @@ namespace GameProject6
         // === Fields for Layer Rotation === //
         public enum CubeAxis { X, Y, Z, None }
         public bool IsRotating => isRotating;
-        public float rotationSpeed = MathHelper.Pi * 2.0f;
+        public float rotationSpeed = MathHelper.Pi * 2.5f;
 
+        private float selectedRotationSpeed;
         private bool isRotating = false;
         private CubeAxis currentAxis;
         private int currentLayer;
@@ -77,8 +78,11 @@ namespace GameProject6
         private const float ScrambleSpeed = MathHelper.Pi * 10.0f;
         // =================================== //
 
-        public RubiksCube2x2(GraphicsDevice graphicsDevice)
+        public RubiksCube2x2(GraphicsDevice graphicsDevice, float moveSpeed)
         {
+            selectedRotationSpeed = moveSpeed;
+            rotationSpeed = selectedRotationSpeed;
+
             this.graphicsDevice = graphicsDevice;
             effect = new BasicEffect(graphicsDevice)
             {
@@ -530,7 +534,7 @@ namespace GameProject6
         {
             if (scrambleQueue.Count == 0)
             {
-                rotationSpeed = GameScene.NormalRotationSpeed;
+                rotationSpeed = selectedRotationSpeed;
                 return;
             }
 

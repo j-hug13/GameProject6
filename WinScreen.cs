@@ -9,7 +9,6 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 
 namespace GameProject6
 {
@@ -19,8 +18,8 @@ namespace GameProject6
         private GraphicsDevice graphics;
         private Rectangle returnButtonBounds;
 
-        private int width;
-        private int height;
+        private int virtualWidth = 1280;
+        private int virtualHeight = 720;
 
         private Color quitColor = Color.Red;
 
@@ -35,17 +34,22 @@ namespace GameProject6
         private bool newestEntryShown = false;
         // ================================== //
 
+        private Point GetScaledMousePos(MouseState currentMouse)
+        {
+            Matrix inv = Matrix.Invert(game.UIScaleMatrix);
+            Vector2 v = Vector2.Transform(currentMouse.Position.ToVector2(), inv);
+            Point pos = new Point((int)v.X, (int)v.Y);
+            return pos;
+        }
+
         public WinScreen(GraphicsDevice graphicsDevice, ContentManager content, MainController controller)
         {
             graphics = graphicsDevice;
 
             spriteFont = content.Load<SpriteFont>("bangers");
 
-            width = graphics.Viewport.Width;
-            height = graphics.Viewport.Height;
-
             Vector2 buttonSize = spriteFont.MeasureString("Return To Menu");
-            Vector2 buttonPos = new Vector2((width / 2) - (buttonSize.X / 2), height - 20 - buttonSize.Y);
+            Vector2 buttonPos = new Vector2((virtualWidth / 2) - (buttonSize.X / 2), virtualHeight - 20 - buttonSize.Y);
             returnButtonBounds = new Rectangle((int)buttonPos.X, (int)buttonPos.Y, (int)buttonSize.X, (int)buttonSize.Y);
             
             game = controller;
@@ -53,18 +57,18 @@ namespace GameProject6
 
         public bool CheckButtonBounds(MouseState currentMouse, MouseState previousMouse)
         {
-            if (returnButtonBounds.Contains(currentMouse.Position) == true)
+            if (returnButtonBounds.Contains(GetScaledMousePos(currentMouse)) == true)
             {
                 quitColor = Color.MediumVioletRed;
             }
-            if (returnButtonBounds.Contains(currentMouse.Position) == false)
+            if (returnButtonBounds.Contains(GetScaledMousePos(currentMouse)) == false)
             {
                 quitColor = Color.Red;
             }
 
             if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
             {
-                return returnButtonBounds.Contains(currentMouse.Position);
+                return returnButtonBounds.Contains(GetScaledMousePos(currentMouse));
             }
             return false;
         }
@@ -119,7 +123,7 @@ namespace GameProject6
             fadeTexture.SetData(new[] { Color.Black });
             spriteBatch.Draw(fadeTexture, graphics.Viewport.Bounds, Color.Black * 0.7f);
 
-            Vector2 center = new Vector2(width / 2, height / 2);
+            Vector2 center = new Vector2(virtualWidth / 2, virtualHeight / 2);
 
             if (enteringName == true)
             {
@@ -186,7 +190,7 @@ namespace GameProject6
             spriteBatch.DrawString(spriteFont, line, new Vector2(center.X - 350, titleSize.Y + 30 + (450)), entryColor);
 
             Vector2 textSize = spriteFont.MeasureString("Return To Menu");
-            spriteBatch.DrawString(spriteFont, "Return To Menu", new Vector2(center.X - textSize.X / 2, graphics.Viewport.Height - 20 - textSize.Y), quitColor);
+            spriteBatch.DrawString(spriteFont, "Return To Menu", new Vector2(center.X - textSize.X / 2, virtualHeight - 20 - textSize.Y), quitColor);
 
         }
     }

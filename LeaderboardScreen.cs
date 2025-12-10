@@ -31,6 +31,17 @@ namespace GameProject6
         private float maxScroll = 0f;
         private const float IndividualEntryHeight = 70f;
 
+        private const int virtualWidth = 1280;
+        private const int virtualHeight = 720;
+
+        private Point GetScaledMousePos()
+        {
+            Matrix inv = Matrix.Invert(game.UIScaleMatrix);
+            Vector2 v = Vector2.Transform(currentMouse.Position.ToVector2(), inv);
+            Point pos = new Point((int)v.X, (int)v.Y);
+            return pos;
+        }
+
         public void LoadContent(ContentManager content, MainController game, GraphicsDevice graphics)
         {
             this.game = game;
@@ -40,9 +51,9 @@ namespace GameProject6
             backButtonBounds = new Rectangle(20, 20, (int)backSize.X, (int)backSize.Y);
 
             Vector2 arrowSize = spriteFont.MeasureString("<");
-            leftArrowBounds = new Rectangle(30, (graphics.Viewport.Height - (int)arrowSize.Y) / 2, (int)arrowSize.X, (int)arrowSize.Y);
+            leftArrowBounds = new Rectangle(30, (virtualHeight - (int)arrowSize.Y) / 2, (int)arrowSize.X, (int)arrowSize.Y);
             arrowSize = spriteFont.MeasureString(">");
-            rightArrowBounds = new Rectangle(graphics.Viewport.Width - (int)arrowSize.X - 30, (graphics.Viewport.Height - (int)arrowSize.Y) / 2, (int)arrowSize.X, (int)arrowSize.Y);
+            rightArrowBounds = new Rectangle(virtualWidth - (int)arrowSize.X - 30, (virtualHeight - (int)arrowSize.Y) / 2, (int)arrowSize.X, (int)arrowSize.Y);
         }
 
         public GameState? Update(GameTime gameTime)
@@ -54,17 +65,17 @@ namespace GameProject6
 
             if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
             {
-                if (backButtonBounds.Contains(currentMouse.Position))
+                if (backButtonBounds.Contains(GetScaledMousePos()))
                 {
                     return GameState.Menu;
                 }
 
-                if (rightArrowBounds.Contains(currentMouse.Position))
+                if (rightArrowBounds.Contains(GetScaledMousePos()))
                 {
                     GetCurrentCube(1);
                 }
 
-                if (leftArrowBounds.Contains(currentMouse.Position))
+                if (leftArrowBounds.Contains(GetScaledMousePos()))
                 {
                     GetCurrentCube(-1);
                 }
@@ -131,12 +142,12 @@ namespace GameProject6
                 count = 10;
             }
 
-            maxScroll = Math.Max(0, (count * IndividualEntryHeight) - (graphics.Viewport.Height - 200));
+            maxScroll = Math.Max(0, (count * IndividualEntryHeight) - (virtualHeight - 200));
 
-            spriteBatch.Begin();
+            spriteBatch.Begin(transformMatrix: game.UIScaleMatrix);
 
             Color backButtonColor;
-            if (backButtonBounds.Contains(currentMouse.Position) == true)
+            if (backButtonBounds.Contains(GetScaledMousePos()) == true)
             {
                 backButtonColor = Color.Gold;
             }
@@ -148,7 +159,7 @@ namespace GameProject6
 
             Vector2 arrowSize = spriteFont.MeasureString("<");
             Color leftArrowColor;
-            if (leftArrowBounds.Contains(currentMouse.Position) == true)
+            if (leftArrowBounds.Contains(GetScaledMousePos()) == true)
             {
                 leftArrowColor = Color.Gold;
             }
@@ -156,10 +167,10 @@ namespace GameProject6
             {
                 leftArrowColor = Color.LightGreen;
             }
-            spriteBatch.DrawString(spriteFont, "<", new Vector2(30, (graphics.Viewport.Height - arrowSize.Y) / 2), leftArrowColor);
+            spriteBatch.DrawString(spriteFont, "<", new Vector2(30, (virtualHeight - arrowSize.Y) / 2), leftArrowColor);
 
             Color rightArrowColor;
-            if (rightArrowBounds.Contains(currentMouse.Position) == true)
+            if (rightArrowBounds.Contains(GetScaledMousePos()) == true)
             {
                 rightArrowColor = Color.Gold;
             }
@@ -167,7 +178,7 @@ namespace GameProject6
             {
                 rightArrowColor = Color.LightGreen;
             }
-            spriteBatch.DrawString(spriteFont, ">", new Vector2(graphics.Viewport.Width - arrowSize.X - 30, (graphics.Viewport.Height - arrowSize.Y) / 2), rightArrowColor);
+            spriteBatch.DrawString(spriteFont, ">", new Vector2(virtualWidth - arrowSize.X - 30, (virtualHeight - arrowSize.Y) / 2), rightArrowColor);
 
 
             string titleText = "";
@@ -184,20 +195,22 @@ namespace GameProject6
                 titleText = "4x4 Cube Leaderboard";
             }
             Vector2 titleSize = spriteFont.MeasureString(titleText);
-            spriteBatch.DrawString(spriteFont, titleText, new Vector2((graphics.Viewport.Width - titleSize.X) / 2, 20), Color.Gold);
+            spriteBatch.DrawString(spriteFont, titleText, new Vector2((virtualWidth - titleSize.X) / 2, 20), Color.Gold);
 
             spriteBatch.End();
 
             RasterizerState rs = new RasterizerState() { ScissorTestEnable = true };
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, rs);
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, rs, null, game.UIScaleMatrix);
 
             // scroll bounds
             int clipX = 150;
             int clipY = 120;                          
-            int clipWidth = graphics.Viewport.Width - 100; 
-            int clipHeight = graphics.Viewport.Height - 200;
+            int clipWidth = virtualWidth - 100; 
+            int clipHeight = virtualHeight - 200;
+            float scaleX = graphics.Viewport.Width / (float)virtualWidth;
+            float scaleY = graphics.Viewport.Height / (float)virtualHeight;
 
-            graphics.ScissorRectangle = new Rectangle(clipX, clipY, clipWidth, clipHeight);
+            graphics.ScissorRectangle = new Rectangle((int)(clipX * scaleX), (int)(clipY * scaleY), (int)(clipWidth * scaleX), (int)(clipHeight * scaleY));
 
             float startY = 120 - scrollOffset;
 

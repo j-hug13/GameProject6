@@ -15,39 +15,49 @@ namespace GameProject6
     {
         private SpriteFont spriteFont;
         private GraphicsDevice graphics;
-        private Rectangle quitButtonBounds;
+        private Rectangle menuButtonBounds;
 
-        private int width;
-        private int height;
+        private int virtualWidth = 1280;
+        private int virtualHeight = 720;
 
-        private Color quitColor = Color.Red;
+        private MainController game;
 
-        public PauseMenu(GraphicsDevice graphicsDevice, ContentManager content) 
+        private Color menuButtonColor = Color.Red;
+
+        private Point GetScaledMousePos(MouseState currentMouse)
+        {
+            Matrix inv = Matrix.Invert(game.UIScaleMatrix);
+            Vector2 v = Vector2.Transform(currentMouse.Position.ToVector2(), inv);
+            Point pos = new Point((int)v.X, (int)v.Y);
+            return pos;
+        }
+
+        public PauseMenu(GraphicsDevice graphicsDevice, ContentManager content, MainController game) 
         {
             graphics = graphicsDevice;
 
             spriteFont = content.Load<SpriteFont>("bangers");
 
-            width = graphics.Viewport.Width;
-            height = graphics.Viewport.Height;
+            this.game = game;
 
-            quitButtonBounds = new Rectangle(width/2 - 60, height - 90, 110, 60);
+            Vector2 textSize = spriteFont.MeasureString("Return to Menu");
+            menuButtonBounds = new Rectangle(virtualWidth/2 - 60, virtualHeight - 90, (int)textSize.X, (int)textSize.Y);
         }
 
-        public bool CheckQuitBounds(MouseState currentMouse, MouseState previousMouse)
+        public bool CheckReturnBounds(MouseState currentMouse, MouseState previousMouse)
         {
-            if (quitButtonBounds.Contains(currentMouse.Position))
+            if (menuButtonBounds.Contains(GetScaledMousePos(currentMouse)))
             {
-                quitColor = Color.MediumVioletRed;
+                menuButtonColor = Color.MediumVioletRed;
             }
-            if (!quitButtonBounds.Contains(currentMouse.Position))
+            if (!menuButtonBounds.Contains(GetScaledMousePos(currentMouse)))
             {
-                quitColor = Color.Red;
+                menuButtonColor = Color.Red;
             }
 
             if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
             {
-                return quitButtonBounds.Contains(currentMouse.Position);
+                return menuButtonBounds.Contains(GetScaledMousePos(currentMouse));
             }
             return false;
         }
@@ -67,12 +77,12 @@ namespace GameProject6
                               "A/D or Left/Right: Rotate";
 
             Vector2 textSize = spriteFont.MeasureString(pauseMenuText);
-            Vector2 center = new Vector2(width / 2, height / 2);
+            Vector2 center = new Vector2(virtualWidth / 2, virtualHeight / 2);
 
             spriteBatch.DrawString(spriteFont, pauseMenuText,center - textSize / 2 - new Vector2(0, 50), Color.White);
 
-            textSize = spriteFont.MeasureString("QUIT");
-            spriteBatch.DrawString(spriteFont, "QUIT", new Vector2(center.X - textSize.X / 2, height - 25 - textSize.Y), quitColor);
+            textSize = spriteFont.MeasureString("Return to Menu");
+            spriteBatch.DrawString(spriteFont, "Return to Menu", new Vector2(center.X - textSize.X / 2, virtualHeight - 25 - textSize.Y), menuButtonColor);
         }
     }
 }
