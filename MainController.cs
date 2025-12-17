@@ -18,8 +18,8 @@ namespace GameProject6
     public enum CubeType
     {
         Cube2x2,
-        Cube3x3, 
-        Cube4x4
+        Cube3x3 
+        //Cube4x4
     }
 
     public class MainController : Game
@@ -40,6 +40,7 @@ namespace GameProject6
         public static int ScreenHeight = 720;
 
         public CubeType SelectedCube;
+        public bool ShouldLoadCube { get; set; } = false;
 
         public Dictionary<CubeType, Leaderboard> Leaderboards { get; private set; } = new Dictionary<CubeType, Leaderboard>();
 

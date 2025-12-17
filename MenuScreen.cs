@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static GameProject6.RubiksCube3x3;
-using static System.TimeZoneInfo;
 
 namespace GameProject6
 {
@@ -39,9 +37,16 @@ namespace GameProject6
 
         private Rectangle twoByTwoButtonBounds;
         private Rectangle threeByThreeButtonBounds;
+
+        private Rectangle newButtonBounds;
+        private Rectangle loadButtonBounds;
+        private CubeType selectedCubeType;
+
         private Rectangle backButtonBounds;
 
         private bool onSelectScreen = false;
+        private bool cubeTypeSelected = false;
+        private bool saveExists = false;
 
         // === Fields For Start Transition === //
         private TransitionTarget transitionTarget = TransitionTarget.None;
@@ -83,6 +88,12 @@ namespace GameProject6
             Vector2 threeByThreeSize = spriteFont.MeasureString("3 x 3");
             twoByTwoButtonBounds = new Rectangle(465, 190, (int)twoByTwoSize.X, (int)twoByTwoSize.Y);
             threeByThreeButtonBounds = new Rectangle(745, 190, (int)threeByThreeSize.X, (int)threeByThreeSize.Y);
+
+            Vector2 newButtonSize = spriteFont.MeasureString("New Cube");
+            Vector2 loadButtonSize = spriteFont.MeasureString("Load Cube");
+            newButtonBounds = new Rectangle(540, 175, (int)newButtonSize.X, (int)newButtonSize.Y);
+            loadButtonBounds = new Rectangle(540, 250, (int)loadButtonSize.X, (int)loadButtonSize.Y);
+
             Vector2 backSize = spriteFont.MeasureString("Back");
             backButtonBounds = new Rectangle(585, 325, (int)backSize.X, (int)backSize.Y);
 
@@ -117,6 +128,8 @@ namespace GameProject6
                     {
                         transitionTarget = TransitionTarget.None;
                         onSelectScreen = false;
+                        cubeTypeSelected = false;
+                        saveExists = false;
                         return GameState.Playing;
                     }
                     else if (transitionTarget == TransitionTarget.Leaderboards)
@@ -172,31 +185,83 @@ namespace GameProject6
             }
             else
             {
-                if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
+                if (cubeTypeSelected == false)
                 {
-                    if (threeByThreeButtonBounds.Contains(GetScaledMousePos()))
+                    if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
                     {
+                        if (threeByThreeButtonBounds.Contains(GetScaledMousePos()))
+                        {
+                            game.SelectedCube = CubeType.Cube3x3;
+                            selectedCubeType = CubeType.Cube3x3;
+                            cubeTypeSelected = true;
+
+                            saveExists = SaveCubeManager.HasSave(selectedCubeType);
+
+                            return null;
+                        }
+
+                        if (twoByTwoButtonBounds.Contains(GetScaledMousePos()))
+                        {
+                            game.SelectedCube = CubeType.Cube2x2;
+                            selectedCubeType = CubeType.Cube2x2;
+                            cubeTypeSelected = true;
+
+                            saveExists = SaveCubeManager.HasSave(selectedCubeType);
+
+                            return null;
+                        }
+
+                        if (backButtonBounds.Contains(GetScaledMousePos()))
+                        {
+                            onSelectScreen = false;
+                            return null;
+                        }
+                    }
+                }
+
+                else
+                {
+                    if (saveExists == true)
+                    {
+                        if (currentMouse.LeftButton == ButtonState.Pressed && previousMouse.LeftButton == ButtonState.Released)
+                        {
+                            if (newButtonBounds.Contains(GetScaledMousePos()))
+                            {
+                                game.ShouldLoadCube = false;
+                                transitionTarget = TransitionTarget.Start;
+                                transitionTimer = 0f;
+                                initialCameraPosition = camera.Position;
+                                initialCameraTarget = camera.Target;
+                                return null;
+                            }
+
+                            if (loadButtonBounds.Contains(GetScaledMousePos()))
+                            {
+                                game.ShouldLoadCube = true;
+                                transitionTarget = TransitionTarget.Start;
+                                transitionTimer = 0f;
+                                initialCameraPosition = camera.Position;
+                                initialCameraTarget = camera.Target;
+                                return null;
+                            }
+
+                            if (backButtonBounds.Contains(GetScaledMousePos()))
+                            {
+                                saveExists = SaveCubeManager.HasSave(selectedCubeType);
+                                onSelectScreen = true;
+                                cubeTypeSelected = false;
+                                return null;
+                            }
+                        }
+                    }
+
+                    else if (transitionTarget == TransitionTarget.None)
+                    {
+                        game.ShouldLoadCube = false;
                         transitionTarget = TransitionTarget.Start;
                         transitionTimer = 0f;
                         initialCameraPosition = camera.Position;
                         initialCameraTarget = camera.Target;
-                        game.SelectedCube = CubeType.Cube3x3;
-                        return null;
-                    }
-
-                    if (twoByTwoButtonBounds.Contains(GetScaledMousePos()))
-                    {
-                        transitionTarget = TransitionTarget.Start;
-                        transitionTimer = 0f;
-                        initialCameraPosition = camera.Position;
-                        initialCameraTarget = camera.Target;
-                        game.SelectedCube = CubeType.Cube2x2;
-                        return null;
-                    }
-
-                    if (backButtonBounds.Contains(GetScaledMousePos()))
-                    {
-                        onSelectScreen = false;
                         return null;
                     }
                 }
@@ -287,44 +352,87 @@ namespace GameProject6
             }
             else
             {
-                spriteBatch.Draw(menuButton, new Vector2(400, 200), Color.White);
-                spriteBatch.Draw(menuButton, new Vector2(680, 200), Color.White);
-                spriteBatch.Draw(menuButton, new Vector2(520, 335), Color.White);
+                if (cubeTypeSelected == false)
+                {
+                    spriteBatch.Draw(menuButton, new Vector2(400, 200), Color.White);
+                    spriteBatch.Draw(menuButton, new Vector2(680, 200), Color.White);
+                    spriteBatch.Draw(menuButton, new Vector2(520, 335), Color.White);
 
-                Color twoByTwoButtonColor;
-                if (twoByTwoButtonBounds.Contains(GetScaledMousePos()) == true && transitionTarget == TransitionTarget.None)
-                {
-                    twoByTwoButtonColor = Color.Gold;
-                }
-                else
-                {
-                    twoByTwoButtonColor = Color.LightGreen;
-                }
-                spriteBatch.DrawString(spriteFont, "2 x 2", new Vector2(465, 190), twoByTwoButtonColor);
+                    Color twoByTwoButtonColor;
+                    if (twoByTwoButtonBounds.Contains(GetScaledMousePos()) == true && transitionTarget == TransitionTarget.None)
+                    {
+                        twoByTwoButtonColor = Color.Gold;
+                    }
+                    else
+                    {
+                        twoByTwoButtonColor = Color.LightGreen;
+                    }
+                    spriteBatch.DrawString(spriteFont, "2 x 2", new Vector2(465, 190), twoByTwoButtonColor);
 
-                Color threeByThreeButtonColor;
-                if (threeByThreeButtonBounds.Contains(GetScaledMousePos()) == true && transitionTarget == TransitionTarget.None)
-                {
-                    threeByThreeButtonColor = Color.Gold;
-                }
-                else
-                {
-                    threeByThreeButtonColor = Color.LightGreen;
-                }
-                spriteBatch.DrawString(spriteFont, "3 x 3", new Vector2(745, 190), threeByThreeButtonColor);
+                    Color threeByThreeButtonColor;
+                    if (threeByThreeButtonBounds.Contains(GetScaledMousePos()) == true && transitionTarget == TransitionTarget.None)
+                    {
+                        threeByThreeButtonColor = Color.Gold;
+                    }
+                    else
+                    {
+                        threeByThreeButtonColor = Color.LightGreen;
+                    }
+                    spriteBatch.DrawString(spriteFont, "3 x 3", new Vector2(745, 190), threeByThreeButtonColor);
 
-                Color backButtonColor;
-                if (backButtonBounds.Contains(GetScaledMousePos()) == true && transitionTarget == TransitionTarget.None)
-                {
-                    backButtonColor = Color.Gold;
+                    Color backButtonColor;
+                    if (backButtonBounds.Contains(GetScaledMousePos()) == true && transitionTarget == TransitionTarget.None)
+                    {
+                        backButtonColor = Color.Gold;
+                    }
+                    else
+                    {
+                        backButtonColor = Color.LightGreen;
+                    }
+                    spriteBatch.DrawString(spriteFont, "Back", new Vector2(585, 325), backButtonColor);
                 }
-                else
+
+                else if (saveExists == true)
                 {
-                    backButtonColor = Color.LightGreen;
+                    spriteBatch.Draw(menuButton, new Vector2(475, 185), Color.White);
+                    spriteBatch.Draw(menuButton, new Vector2(475, 260), Color.White);
+                    spriteBatch.Draw(menuButton, new Vector2(520, 335), Color.White);
+
+                    Color newButtonColor;
+                    if (newButtonBounds.Contains(GetScaledMousePos()) == true && transitionTarget == TransitionTarget.None)
+                    {
+                        newButtonColor = Color.Gold;
+                    }
+                    else
+                    {
+                        newButtonColor = Color.LightGreen;
+                    }
+                    spriteBatch.DrawString(spriteFont, "New Cube", new Vector2(540, 175), newButtonColor);
+
+                    Color loadButtonColor;
+                    if (loadButtonBounds.Contains(GetScaledMousePos()) == true && transitionTarget == TransitionTarget.None)
+                    {
+                        loadButtonColor = Color.Gold;
+                    }
+                    else
+                    {
+                        loadButtonColor = Color.LightGreen;
+                    }
+                    spriteBatch.DrawString(spriteFont, "Load Cube", new Vector2(540, 250), loadButtonColor);
+
+                    Color backButtonColor;
+                    if (backButtonBounds.Contains(GetScaledMousePos()) == true && transitionTarget == TransitionTarget.None)
+                    {
+                        backButtonColor = Color.Gold;
+                    }
+                    else
+                    {
+                        backButtonColor = Color.LightGreen;
+                    }
+                    spriteBatch.DrawString(spriteFont, "Back", new Vector2(585, 325), backButtonColor);
                 }
-                spriteBatch.DrawString(spriteFont, "Back", new Vector2(585, 325), backButtonColor);
             }
-
+         
             spriteBatch.End();
         }
     }

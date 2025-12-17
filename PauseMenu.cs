@@ -24,6 +24,8 @@ namespace GameProject6
 
         private Color menuButtonColor = Color.Red;
 
+        private Texture2D fadeTexture;
+
         private Point GetScaledMousePos(MouseState currentMouse)
         {
             Matrix inv = Matrix.Invert(game.UIScaleMatrix);
@@ -40,7 +42,10 @@ namespace GameProject6
 
             this.game = game;
 
-            Vector2 textSize = spriteFont.MeasureString("Return to Menu");
+            fadeTexture = new Texture2D(graphics, 1, 1);
+            fadeTexture.SetData(new[] { Color.Black });
+
+            Vector2 textSize = spriteFont.MeasureString("Save And Return to Menu");
             menuButtonBounds = new Rectangle(virtualWidth/2 - 60, virtualHeight - 90, (int)textSize.X, (int)textSize.Y);
         }
 
@@ -64,8 +69,6 @@ namespace GameProject6
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            Texture2D fadeTexture = new Texture2D(graphics, 1, 1);
-            fadeTexture.SetData(new[] { Color.Black });
             spriteBatch.Draw(fadeTexture, graphics.Viewport.Bounds, Color.Black * 0.7f);
 
             string pauseMenuText = "GAME PAUSED\n" +
@@ -81,8 +84,8 @@ namespace GameProject6
 
             spriteBatch.DrawString(spriteFont, pauseMenuText,center - textSize / 2 - new Vector2(0, 50), Color.White);
 
-            textSize = spriteFont.MeasureString("Return to Menu");
-            spriteBatch.DrawString(spriteFont, "Return to Menu", new Vector2(center.X - textSize.X / 2, virtualHeight - 25 - textSize.Y), menuButtonColor);
+            textSize = spriteFont.MeasureString("Save And Return to Menu");
+            spriteBatch.DrawString(spriteFont, "Save And Return to Menu", new Vector2(center.X - textSize.X / 2, virtualHeight - 25 - textSize.Y), menuButtonColor);
         }
     }
 }

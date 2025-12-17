@@ -120,9 +120,9 @@ namespace GameProject6
             int t = (int)currentCube + direction;
             if (t < 0)
             {
-                t = 2;
+                t = 1;
             }
-            if (t > 2)
+            if (t > 1)
             {
                 t = 0;
             }
@@ -190,10 +190,12 @@ namespace GameProject6
             {
                 titleText = "3x3 Cube Leaderboard";
             }
+            /*
             else if (currentCube == CubeType.Cube4x4)
             {
                 titleText = "4x4 Cube Leaderboard";
             }
+            */
             Vector2 titleSize = spriteFont.MeasureString(titleText);
             spriteBatch.DrawString(spriteFont, titleText, new Vector2((virtualWidth - titleSize.X) / 2, 20), Color.Gold);
 

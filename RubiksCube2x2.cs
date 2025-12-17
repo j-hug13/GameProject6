@@ -72,7 +72,7 @@ namespace GameProject6
 
         private readonly Queue<CubeMove> scrambleQueue = new Queue<CubeMove>();
         private readonly Random r = new Random();
-        private const int ScrambleMoves = 1;
+        private const int ScrambleMoves = 30;
         private CubeAxis lastAxis = CubeAxis.None;
         private int lastLayer;
         private const float ScrambleSpeed = MathHelper.Pi * 10.0f;
@@ -358,6 +358,10 @@ namespace GameProject6
         private void UpdateCubeletBuffer(Cubelet c)
         {
             var verts = CreateRubiksCubelet(new Point3(0, 0, 0), 1f, c.FaceColors, c.FaceNormals);
+
+            c.Buffer?.Dispose();
+            c.Buffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColor), verts.Length, BufferUsage.WriteOnly);
+
             c.Buffer.SetData(verts);
         }
 
@@ -575,6 +579,76 @@ namespace GameProject6
                 }
             }
             return true;
+        }
+        #endregion
+
+        #region Save and Load The Cube
+        public SaveCubeState GetState(double solvingTime)
+        {
+            SaveCubeState state = new SaveCubeState()
+            {
+                SolvingTime = solvingTime,
+                CubeType = CubeType.Cube2x2,
+                CubeletPositions = new Point3[2][][],
+                CubeletColors = new ColorSaveFormat[2][][][]
+            };
+
+            for (int x = 0; x < 2; x++)
+            {
+                state.CubeletPositions[x] = new Point3[2][];
+                state.CubeletColors[x] = new ColorSaveFormat[2][][];
+
+                for (int y = 0; y < 2; y++)
+                {
+                    state.CubeletPositions[x][y] = new Point3[2];
+                    state.CubeletColors[x][y] = new ColorSaveFormat[2][];
+
+                    for (int z = 0; z < 2; z++)
+                    {
+                        var c = cubelets[x, y, z];
+                        state.CubeletPositions[x][y][z] = c.GridPos;
+                        state.CubeletColors[x][y][z] = new ColorSaveFormat[c.FaceColors.Length];
+                        for (int i = 0; i < c.FaceColors.Length; i++)
+                        {
+                            state.CubeletColors[x][y][z][i] = new ColorSaveFormat(c.FaceColors[i]);
+
+                        }
+                    }
+                }
+            }
+
+            return state;
+        }
+
+        public void LoadState(SaveCubeState state)
+        {
+            for (int x = 0; x < 2; x++)
+            {
+                for (int y = 0; y < 2; y++)
+                {
+                    for (int z = 0; z < 2; z++)
+                    {
+                        var c = cubelets[x, y, z];
+                        var savedColors = state.CubeletColors[x][y][z];
+                        if (savedColors != null)
+                        {
+                            for (int i = 0; i < savedColors.Length; i++)
+                            {
+                                c.FaceColors[i] = savedColors[i].ToColor();
+                            }
+                        }
+                        else
+                        {
+                            c.FaceColors = InitFaceColors(c.GridPos.X, c.GridPos.Y, c.GridPos.Z);
+                        }
+                        c.GridPos = state.CubeletPositions[x][y][z];
+
+                        UpdateCubeletBuffer(c);
+                    }
+                }
+            }
+
+            RebuildCubeArray();
         }
         #endregion
 

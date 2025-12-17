@@ -108,7 +108,20 @@ namespace GameProject6
 
             winScreen = new WinScreen(controllerGraphics, content, game);
 
-            shouldStartScramble = true;
+            solvingTime = TimeSpan.Zero;
+            hasPlayerStarted = false;
+            shouldStartScramble = false;
+            scrambleDelayTimer = TimeSpan.Zero;
+
+            if (game.ShouldLoadCube == true && SaveCubeManager.HasSave(cubeType) == true)
+            {
+                LoadSavedGame();
+                game.ShouldLoadCube = false;
+            }
+            else
+            {
+                shouldStartScramble = true;
+            }
         }
 
         public GameState? Update(GameTime gameTime)
@@ -142,6 +155,7 @@ namespace GameProject6
             {
                 if (pauseMenu.CheckReturnBounds(currentMouse, previousMouse) == true)
                 {
+                    SaveGame();
                     return GameState.Menu;
                 }
             }
@@ -156,7 +170,7 @@ namespace GameProject6
 
             else
             {
-                if (hasPlayerStarted == true)
+                if (isPaused == false && hasPlayerStarted == true)
                 {
                     solvingTime += gameTime.ElapsedGameTime;
 
@@ -164,6 +178,8 @@ namespace GameProject6
                     {
                         isSolved = true;
                         timeToSolve = solvingTime;
+
+                        SaveCubeManager.Clear(cubeType);
 
                         onWinScreen = true;
                         winScreen.StartNameEntry(cubeType, timeToSolve);
@@ -263,5 +279,34 @@ namespace GameProject6
 
             spriteBatch.End();
         }
+
+        #region Save and Load Cube
+        private void SaveGame()
+        {
+            if (hasPlayerStarted == false || rubiksCube.IsRotating == true)
+            {
+                return;
+            }
+
+            SaveCubeState state = rubiksCube.GetState(solvingTime.TotalSeconds);
+
+            SaveCubeManager.Save(cubeType, state);
+        }
+
+        private void LoadSavedGame()
+        {
+            var state = SaveCubeManager.Load(cubeType);
+            if (state == null)
+            {
+                return;
+            }
+
+            rubiksCube.LoadState(state);
+            solvingTime = TimeSpan.FromSeconds(state.SolvingTime);
+            hasPlayerStarted = true;
+            shouldStartScramble = false;
+            scrambleDelayTimer = TimeSpan.Zero;
+        }
+        #endregion
     }
 }

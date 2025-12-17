@@ -149,10 +149,12 @@ namespace GameProject6
             {
                 titleText = "3x3 Cube Leaderboard";
             }
+            /*
             else if (cubeType == CubeType.Cube4x4)
             {
                 titleText = "4x4 Cube Leaderboard";
             }
+            */
             Vector2 titleSize = spriteFont.MeasureString(titleText);
             spriteBatch.DrawString(spriteFont, titleText, new Vector2(center.X - titleSize.X / 2, 20), Color.DarkGray);
 
